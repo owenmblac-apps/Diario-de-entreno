@@ -205,7 +205,7 @@ input[type=text],input[type=number],input[type=date],input[type=time],.set input
 .restbtns button{flex:1;min-height:44px;font-size:14px}
 .restinfo{margin:6px 0 0;font-size:12px;opacity:.75}
 main{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
-/* Añadidos para la versión pública: ajustes, plan editable y entrada manual del reloj */
+/* Añadidos para la versión pública: ajustes, plan editable, planes personalizados y entrada manual del reloj */
 select{width:100%;min-width:0;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);color:var(--fg);font:inherit;font-size:16px;padding:0 8px}
 select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .date .ib svg{display:block}
@@ -214,6 +214,7 @@ select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 details.card summary{min-height:32px}
 .kv label{flex:1}
 nav.tabs[hidden]{display:none!important}
+#plan-result{scroll-margin-top:110px}
 </style>
 </head>
 <body>
@@ -335,7 +336,7 @@ function zoneNote(){var m=ME(),z=T().zones;return z?'Zonas por reserva cardíaca
 var GEAR='<button class="ib" data-act="settings" aria-label="Ajustes"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>';
 function header(){
   if(S.tab==='progress')return '<div class="top"><div class="date"><span class="ib" style="visibility:hidden"></span><h1 style="text-transform:none">Progreso general</h1>'+GEAR+'</div></div>';
-  if(S.tab==='settings'||S.tab==='plan')return '<div class="top"><div class="date"><button class="ib" data-act="back" aria-label="Volver">‹</button><h1 style="text-transform:none">'+(S.tab==='plan'?'Plan de entreno':'Ajustes')+'</h1><span class="ib" style="visibility:hidden"></span></div></div>';
+  if(S.tab==='settings'||S.tab==='plan'||S.tab==='coach'||S.tab==='catalog')return '<div class="top"><div class="date"><button class="ib" data-act="back" aria-label="Volver">‹</button><h1 style="text-transform:none">'+({plan:'Plan de entreno',settings:'Ajustes',coach:'Mi plan',catalog:'Los 100 planes'})[S.tab]+'</h1><span class="ib" style="visibility:hidden"></span></div></div>';
   var d=S.date,day=dayOf(d),pd=planDays();
   var h='<div class="top"><div class="date"><button class="ib" data-act="prev" aria-label="Día anterior">‹</button><h1>'+fmtDate(d)+'</h1><button class="ib" data-act="next" aria-label="Día siguiente">›</button>'+GEAR+'</div>';
   if(d!==today())h+='<div style="text-align:center"><button class="today" data-act="today">Ir a hoy</button></div>';
@@ -346,7 +347,7 @@ function header(){
 function viewTrainMain(){
   var day=dayOf(S.date),plan=S.plan[day],out='',dd0=S.days[S.date],hasOv=!!(dd0&&dd0.exercises&&dd0.exercises.length),by=liftsByEx();
   if(!planDays().length){
-    out+='<div class="card"><h2>Crea tu plan</h2><p class="muted" style="margin:6px 0 10px">Define tus días (por ejemplo «A · Pecho», «B · Espalda», «Descanso»), sus ejercicios y qué día de la semana toca cada uno. Mientras tanto puedes anotar ejercicios sueltos abajo.</p><button class="btn block" data-act="openPlan">Crear mi plan</button></div>';
+    out+='<div class="card"><h2>Crea tu plan</h2><p class="muted" style="margin:6px 0 10px">Responde unas preguntas y la app elige el plan más adecuado entre 100, o créalo tú a mano. Mientras tanto puedes anotar ejercicios sueltos abajo.</p><button class="btn block" data-act="coach">Crear plan personalizado</button><button class="btn ghost block" style="margin-top:8px" data-act="openPlan">Crearlo a mano</button></div>';
     out+=watchOfDay();out+=extraLifts({},by);out+=addExCard();return out;
   }
   if((!plan||plan.kind!=='gym')&&!hasOv){
@@ -418,7 +419,10 @@ var VIDS={
   'calf':[['Técnica','beine/wandenheben']],
   'x-curl-biceps-con-barra':[['Técnica','bizeps/bizeps-curl-langhantel']],
   'x-press-inclinado-mancuernas-centro':[['Técnica','brust/kurzhantel-schragbankdrucken']],
-  'x-press-pecho-sentado':[['Técnica','brust/brustpresse-an-der-maschine']]
+  'x-press-pecho-sentado':[['Técnica','brust/brustpresse-an-der-maschine']],
+  'goblet':[['Técnica','beine/goblet-kniebeuge']],
+  'db-press':[['Técnica','brust/kurzhantel-bankdrucken']],
+  'lunge':[['Técnica','beine/kurzhantel-ausfallschritte']]
 };
 /* Catálogo para elegir ejercicios en el plan: con estos nombres salen vídeo y pausa sugerida. */
 var CATALOG=[['bench','Press de banca'],['incline-db','Press inclinado con mancuernas'],['x-press-pecho-sentado','Press de pecho sentado (máquina)'],['cable-fly','Aperturas en polea'],
@@ -427,7 +431,8 @@ var CATALOG=[['bench','Press de banca'],['incline-db','Press inclinado con mancu
   ['leg-press','Prensa o sentadilla goblet'],['rdl','Peso muerto rumano'],['hip-thrust','Hip thrust'],['leg-curl','Curl femoral'],['hip-abd','Abducción de cadera'],['cable-kickback','Patada de glúteo en polea'],
   ['sl-bridge','Puente de glúteo a una pierna'],['calf','Elevación de gemelos'],['box-jump','Salto al cajón'],['mb-slam','Slam con balón medicinal'],
   ['plank','Plancha',1],['side-plank','Plancha lateral',1],['hollow','Hollow hold',1],['dead-bug','Dead bug'],['pallof','Press Pallof'],['cable-rotation','Rotación en polea'],['rev-crunch','Crunch inverso'],
-  ['wrist-flex','Flexión de muñeca'],['wrist-ext','Extensión de muñeca']];
+  ['wrist-flex','Flexión de muñeca'],['wrist-ext','Extensión de muñeca'],
+  ['squat','Sentadilla con barra'],['ohp','Press militar'],['deadlift','Peso muerto'],['goblet','Sentadilla goblet'],['db-press','Press con mancuernas (banco o suelo)'],['db-row','Remo con mancuerna'],['db-ohp','Press de hombros con mancuernas'],['pushup','Flexiones'],['lunge','Zancadas con mancuernas']];
 function catalogFind(name){var n=String(name||'').trim().toLowerCase();for(var i=0;i<CATALOG.length;i++)if(CATALOG[i][1].toLowerCase()===n)return CATALOG[i];return null}
 function slugId(nm){return 'x-'+nm.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)}
 function vidsHtml(id){var v=VIDS[id];if(!v)return '';
@@ -618,7 +623,7 @@ function viewSettings(){
     '<div class="row" style="margin-top:6px"><input type="text" id="s-gym" data-f="gymNew" value="'+esc(S.draft.gymNew)+'" placeholder="Nombre del gimnasio"><button class="btn" data-act="addGym">Añadir</button></div>'+
     '<div class="kv" style="margin-top:8px"><span>Tarjeta de gimnasio en Entreno</span><button class="chip" style="flex:none" data-act="toggle" data-k="hideGym" aria-pressed="'+(!m.hideGym)+'">'+(m.hideGym?'Oculta':'Visible')+'</button></div>'+
     '<div class="kv"><span>Tarjeta de sauna en Entreno</span><button class="chip" style="flex:none" data-act="toggle" data-k="hideSauna" aria-pressed="'+(!m.hideSauna)+'">'+(m.hideSauna?'Oculta':'Visible')+'</button></div></div>';
-  out+='<div class="card"><div class="up" style="margin-bottom:8px">Plan</div><div class="small muted" style="margin-bottom:8px">'+planDays().length+' días definidos.</div><button class="btn block" data-act="openPlan">Editar plan y semana</button></div>';
+  out+='<div class="card"><div class="up" style="margin-bottom:8px">Plan</div><div class="small muted" style="margin-bottom:8px">'+planDays().length+' días definidos.</div><button class="btn block" data-act="coach">Plan personalizado</button><button class="btn ghost block" style="margin-top:8px" data-act="openPlan">Editar plan y semana</button></div>';
   out+='<div class="card"><div class="up" style="margin-bottom:8px">Apariencia</div><div class="chips" style="margin:0">'+[['auto','Automático'],['light','Claro'],['dark','Oscuro']].map(function(t){return '<button class="chip" data-act="theme" data-v="'+t[0]+'" aria-pressed="'+(th===t[0])+'">'+t[1]+'</button>'}).join('')+'</div></div>';
   out+='<div class="card"><div class="up" style="margin-bottom:8px">Tus datos</div><button class="btn ghost block" data-act="export">Descargar mis datos (JSON)</button>'+
     '<button class="btn ghost block" style="margin-top:8px;color:var(--danger);border-color:var(--danger)" data-act="wipe">'+(S.armed==='wipe'?'¿Seguro? Se borra todo, para siempre. Toca otra vez':(DEMO?'Borrar datos de demo':'Eliminar todos mis datos (Drive y este dispositivo)'))+'</button>'+
@@ -630,6 +635,7 @@ function viewSettings(){
 /* ---------- editor del plan ---------- */
 function viewPlan(){
   var pd=planDays(),sc=(ME().schedule||[]).slice(),out='';
+  var pm=ME().planMeta;out+='<div class="card"><div class="up" style="margin-bottom:6px">Plan personalizado</div>'+(pm?'<div class="small muted" style="margin-bottom:8px">Usas el plan nº '+planNumber(pm.id)+' ('+esc(profileName(pm.id.split("-")[0]).toLowerCase())+', '+pm.id.split("-")[1]+' días, nivel '+LEVELS[pm.lv].toLowerCase()+'), aplicado el '+fmtShort(pm.at)+'. Puedes retocarlo abajo.</div>':'<div class="small muted" style="margin-bottom:8px">Responde unas preguntas y la app elige el más adecuado entre 100 planes.</div>')+'<button class="btn block" data-act="coach">'+(pm?'Cambiar de plan':'Crear plan personalizado')+'</button></div>';
   out+='<datalist id="catalog">'+CATALOG.map(function(c){return '<option value="'+esc(c[1])+'">'}).join('')+'</datalist>';
   out+='<div class="card"><div class="up" style="margin-bottom:6px">Semana</div><div class="small muted" style="margin-bottom:6px">Qué día del plan toca cada día de la semana. Cada día puedes cambiarlo con los botones de arriba en Entreno.</div>'+
     [1,2,3,4,5,6,0].map(function(i){return '<div class="kv"><label for="sc-'+i+'" style="margin:0;font-size:14px;color:var(--fg)">'+DOWFULL[i]+'</label><select id="sc-'+i+'" data-f="sched" data-i="'+i+'" style="max-width:60%"><option value="">—</option>'+pd.map(function(p){return '<option value="'+esc(p.id)+'"'+(sc[i]===p.id?' selected':'')+'>'+esc((p.label?p.label+' · ':'')+(p.name||''))+'</option>'}).join('')+'</select></div>'}).join('')+'</div>';
@@ -665,6 +671,234 @@ function viewPlan(){
   return out;
 }
 
+/* =====================================================================
+   PLANES PERSONALIZADOS · 100 plantillas
+   10 combinaciones de objetivos × 5 frecuencias (2–6 días) × 2 lugares (gimnasio, casa).
+   Cada plantilla se adapta a la experiencia y la edad. Todo es orientativo.
+   Fuentes (PLAN_SRC):
+   · ACSM 2009, «Progression Models in Resistance Training for Healthy Adults», Med Sci Sports Exerc 41(3):687–708.
+   · Schoenfeld, Ogborn y Krieger 2016, Sports Med 46(11):1689–1697 (frecuencia: 2 veces/semana > 1).
+   · OMS 2020, Directrices sobre actividad física y hábitos sedentarios.
+   · Helgerud et al. 2007, Med Sci Sports Exerc 39(4):665–671 (intervalos 4×4).
+   · Wilson et al. 2012, J Strength Cond Res 26(8):2293–2307 (entrenamiento concurrente).
+   · PAR-Q+ (cuestionario de aptitud para la actividad física).
+   ===================================================================== */
+var GOALS={F:'Fuerza',H:'Hipertrofia',R:'Resistencia'};
+var PROFILES=['F','H','R','FH','FR','HF','HR','RF','RH','FHR'];
+function profileName(p){if(p==='FHR')return 'Fuerza, hipertrofia y resistencia';return p.split('').map(function(c,i){return i?GOALS[c].toLowerCase():GOALS[c]}).join(' + ')}
+var RT_W={F:1,H:1,FH:1,HF:1,FR:.6,HR:.6,FHR:.5,RF:.4,RH:.4,R:0};
+var LEVELS={nov:'Principiante',int:'Intermedio',adv:'Avanzado'};
+var LEVEL_DESC={nov:'Nunca he entrenado con pesas o llevo años sin hacerlo',int:'Unos 6 meses entrenando de forma constante',adv:'Varios años entrenando de forma constante'};
+var RT_CAP={nov:3,int:4,adv:6};/* ACSM 2009: principiante 2–3, intermedio 3–4, avanzado 4–6 días/semana */
+var PLACES={gym:'Gimnasio',home:'Casa (mancuernas)'};
+var DAYS_N=[2,3,4,5,6];
+function planId(p,n,pl){return p+'-'+n+'-'+pl}
+function allPlanIds(){var o=[];PROFILES.forEach(function(p){DAYS_N.forEach(function(n){['gym','home'].forEach(function(pl){o.push(planId(p,n,pl))})})});return o}
+function planNumber(id){return allPlanIds().indexOf(id)+1}
+var EXN={squat:'Sentadilla con barra',bench:'Press de banca','row-heavy':'Remo pesado',ohp:'Press militar',rdl:'Peso muerto rumano',pullup:'Dominadas o jalón al pecho',deadlift:'Peso muerto',
+  'leg-press':'Prensa o sentadilla goblet','incline-db':'Press inclinado con mancuernas','cable-row':'Remo en polea sentado','lat-raise':'Elevaciones laterales','biceps-curl':'Curl de bíceps',
+  'cable-fly':'Aperturas en polea','triceps-push':'Extensión de tríceps en polea','leg-curl':'Curl femoral','face-pull':'Face pull','calf':'Elevación de gemelos','hip-thrust':'Hip thrust',
+  'hammer-curl':'Curl martillo','tri-overhead':'Extensión de tríceps sobre la cabeza',plank:'Plancha','side-plank':'Plancha lateral','dead-bug':'Dead bug',pallof:'Press Pallof',
+  goblet:'Sentadilla goblet','db-press':'Press con mancuernas (banco o suelo)','db-row':'Remo con mancuerna','db-ohp':'Press de hombros con mancuernas',pushup:'Flexiones',lunge:'Zancadas con mancuernas','sl-bridge':'Puente de glúteo a una pierna'};
+var SESS={gym:{
+  FA:['Cuerpo completo A',[['squat','m'],['bench','m'],['row-heavy','m'],['lat-raise','a'],['biceps-curl','a'],['plank','c']]],
+  FB:['Cuerpo completo B',[['rdl','m'],['ohp','m'],['pullup','m'],['cable-fly','a'],['triceps-push','a'],['pallof','c']]],
+  FC:['Cuerpo completo C',[['leg-press','m'],['incline-db','m'],['cable-row','m'],['leg-curl','a'],['face-pull','a'],['dead-bug','c']]],
+  UA:['Torso A',[['bench','m'],['row-heavy','m'],['ohp','m'],['lat-raise','a'],['triceps-push','a'],['biceps-curl','a']]],
+  LA:['Pierna A',[['squat','m'],['rdl','m'],['leg-curl','a'],['calf','a'],['plank','c']]],
+  UB:['Torso B',[['incline-db','m'],['pullup','m'],['cable-row','m'],['cable-fly','a'],['face-pull','a'],['hammer-curl','a']]],
+  LB:['Pierna B',[['deadlift','m'],['leg-press','m'],['hip-thrust','a'],['calf','a'],['side-plank','c']]],
+  PU:['Empuje',[['bench','m'],['ohp','m'],['incline-db','m'],['lat-raise','a'],['triceps-push','a'],['cable-fly','a']]],
+  PL:['Tirón',[['pullup','m'],['row-heavy','m'],['cable-row','m'],['face-pull','a'],['biceps-curl','a'],['hammer-curl','a']]],
+  LE:['Pierna',[['squat','m'],['rdl','m'],['leg-press','m'],['leg-curl','a'],['calf','a'],['hip-thrust','a']]],
+  CI:['Circuito de fuerza',[['leg-press','e'],['bench','e'],['cable-row','e'],['rdl','e'],['plank','c']]]
+},home:{
+  FA:['Cuerpo completo A',[['goblet','m'],['db-press','m'],['db-row','m'],['lat-raise','a'],['biceps-curl','a'],['plank','c']]],
+  FB:['Cuerpo completo B',[['rdl','m'],['db-ohp','m'],['pushup','m'],['db-row','m'],['tri-overhead','a'],['side-plank','c']]],
+  FC:['Cuerpo completo C',[['lunge','m'],['db-press','m'],['db-row','m'],['sl-bridge','a'],['hammer-curl','a'],['dead-bug','c']]],
+  UA:['Torso A',[['db-press','m'],['db-row','m'],['db-ohp','m'],['lat-raise','a'],['tri-overhead','a'],['biceps-curl','a']]],
+  LA:['Pierna A',[['goblet','m'],['rdl','m'],['sl-bridge','a'],['calf','a'],['plank','c']]],
+  UB:['Torso B',[['pushup','m'],['db-row','m'],['db-ohp','m'],['lat-raise','a'],['hammer-curl','a'],['tri-overhead','a']]],
+  LB:['Pierna B',[['lunge','m'],['rdl','m'],['sl-bridge','a'],['calf','a'],['side-plank','c']]],
+  CI:['Circuito de fuerza',[['goblet','e'],['pushup','e'],['db-row','e'],['lunge','e'],['plank','c']]]
+}};
+var SPLIT={2:['FA','FB'],3:['FA','FB','FC'],4:['UA','LA','UB','LB'],5:{gym:['UA','LA','PU','PL','LE'],home:['UA','LA','UB','LB','FA']},6:{gym:['PU','PL','LE','PU','PL','LE'],home:['UA','LA','UB','LB','UA','LA']}};
+/* series × repeticiones: ACSM 2009 (fuerza: principiante 8–12 rep, luego 1–6 cargas altas; hipertrofia: 8–12, avanzado 1–12 con 3–6 series; resistencia muscular: 10–15, avanzado 10–25) */
+var SCH={str:{nov:[2,'8–12'],int:[4,'4–6'],adv:[5,'3–5']},hyp:{nov:[2,'8–12'],int:[3,'8–12'],adv:[4,'6–12']},acc:{nov:[2,'10–12'],int:[3,'10–12'],adv:[3,'10–12']},
+  end:{nov:[2,'12–15'],int:[2,'15–20'],adv:[3,'15–20']},core:{nov:[2,'20–30 s'],int:[3,'30–45 s'],adv:[3,'45–60 s']},corer:{nov:[2,'8–10 por lado'],int:[3,'10–12 por lado'],adv:[3,'12–15 por lado']}};
+var TIMED_CORE={plank:1,'side-plank':1,hollow:1};
+function roleKind(p,role,firstMain){
+  if(role==='c')return 'core';if(role==='e')return 'end';
+  if(role==='m'){if(p==='F'||p==='FH'||p==='FR'||p==='RF')return 'str';if(p==='HF'||p==='FHR')return firstMain?'str':'hyp';return 'hyp'}
+  return 'acc'}
+function accLimit(p){return (p==='F'||p==='FR'||p==='RF')?1:p==='RH'?2:99}
+function buildSession(key,place,p,lv){
+  var src=SESS[place][key],acc=0,firstMain=true,lim=accLimit(p),sec=(p==='RF'||p==='RH');
+  var ex=[];src[1].forEach(function(e){var id=e[0],role=e[1];
+    if(role==='a'){if(acc>=lim)return;acc++}
+    var k=roleKind(p,role,role==='m'&&firstMain);if(role==='m')firstMain=false;
+    if(k==='core'&&!TIMED_CORE[id])k='corer';
+    var s=SCH[k][lv],sets=s[0]-(sec&&k!=='core'&&k!=='corer'?1:0);if(sets<2)sets=2;
+    ex.push({id:id,name:EXN[id]||id,sets:sets,reps:s[1],timed:!!TIMED_CORE[id],role:k})});
+  return {key:key,name:src[0],ex:ex}}
+var DAYPOS={2:[1,4],3:[1,3,5],4:[1,2,4,5],5:[1,2,3,5,6],6:[1,2,3,4,5,6]};
+function z2Min(lv,rMain){return ({nov:25,int:40,adv:50})[lv]+(rMain?10:0)}
+
+/* Genera el plan para unas respuestas. q: {p,n,place,lv,age,lowImpact} */
+function buildPlan(q){
+  var p=q.p,n=q.n,place=q.place,lv=q.lv,hasR=p.indexOf('R')>=0,rMain=p.charAt(0)==='R',rtFocus=p.charAt(0)==='F'||p.charAt(0)==='H';
+  var why=[],k,capped=false,z=zonesOf();
+  if(p==='R'){k=n>=3?2:n}
+  else{k=(p==='FR'||p==='HR')?Math.ceil(n*RT_W[p]):Math.round(n*RT_W[p]);k=Math.max(k,Math.min(2,n));if(k>RT_CAP[lv]){k=RT_CAP[lv];capped=true}k=Math.min(k,n)}
+  var c=n-k,combine=hasR&&(c===0||p==='R');
+  /* sesiones de pesas */
+  var rtKeys=[];if(p==='R')for(var i=0;i<k;i++)rtKeys.push('CI');else{var sp=SPLIT[k];rtKeys=(Array.isArray(sp)?sp:sp[place]).slice()}
+  var sessions={};rtKeys.forEach(function(key){if(!sessions[key])sessions[key]=buildSession(key,place,p,lv)});
+  /* sesiones de cardio */
+  var mod=q.lowImpact?'Bici, elíptica, remo o natación (bajo impacto).':'Carrera suave, bici, elíptica, remo o natación.';
+  var hr=z?'Pulso entre '+z[1]+' y '+(z[2]-1)+' lpm (60–70 % de tu reserva cardíaca).':'Ritmo cómodo; pon tu FC máx. y en reposo en Ajustes para ver tu rango en lpm.';
+  var cardio=[];
+  if(c>0){
+    if(hasR){var nInt=lv==='nov'?0:(lv==='adv'&&c>=4?2:(c>=2||(rMain&&lv==='adv')?1:0));
+      for(var j=0;j<c;j++)cardio.push(j<nInt?'INT':'Z2')}
+    else for(var j2=0;j2<c;j2++)cardio.push('ACT');
+  }
+  var zm=z2Min(lv,rMain),cmb=lv==='nov'?'15–20':'20–30';
+  var docs={};
+  rtKeys.forEach(function(key){var s=sessions[key];docs[key]={name:s.name,kind:'gym',exercises:s.ex,note:'',extra:combine?{name:'Cardio zona 2',target:(p==='R'?zm:cmb)+' min',note:'Después de las pesas o en otro momento del día. '+hr}:null}});
+  if(cardio.indexOf('Z2')>=0)docs.Z2={name:'Zona 2',kind:'cardio',note:mod+' '+hr,extra:{name:'Cardio zona 2',target:zm+' min',note:'Debes poder hablar mientras lo haces.'},exercises:[]};
+  if(cardio.indexOf('INT')>=0)docs.INT={name:'Intervalos 4×4',kind:'cardio',note:'Calienta 10 min suave. Haz 4 bloques de 4 min fuertes (90–95 % de tu FC máx.) con 3 min suaves (~70 %) entre ellos. Termina con 5 min suaves.',extra:{name:'Intervalos 4×4',target:'≈40 min',note:mod},exercises:[]};
+  if(cardio.indexOf('ACT')>=0)docs.ACT={name:'Actividad suave',kind:'cardio',note:'Paseo, bici suave o natación tranquila. Suma minutos de actividad sin cargar más las pesas.',extra:{name:'Actividad suave',target:'20–30 min',note:''},exercises:[]};
+  docs.REST={name:'Descanso',kind:'rest',note:'Descanso. Paseo o movilidad suave si te apetece.',exercises:[],extra:null};
+  /* orden de la semana: reparte pesas y cardio */
+  var seq=[],ri=0,ci=0;
+  for(var t=0;t<n;t++){var rr=rtKeys.length?ri/rtKeys.length:1,cr=cardio.length?ci/cardio.length:1;
+    if(ri<rtKeys.length&&(ci>=cardio.length||rr<cr||(rr===cr&&!rMain)))seq.push(rtKeys[ri++]);else seq.push(cardio[ci++])}
+  var sched=[null,null,null,null,null,null,null];DAYPOS[n].forEach(function(d,i){sched[d]=seq[i]});
+  for(var d0=0;d0<7;d0++)if(!sched[d0])sched[d0]='REST';
+  /* +65 años: equilibrio (OMS 2020: 3 o más días/semana) */
+  if(q.age>=65){var cnt=0;[1,2,3,4,5,6,0].forEach(function(d){var key=sched[d];if(cnt<3&&key!=='REST'){var dc=docs[key];if(dc.note.indexOf('equilibrio')<0){dc.note=(dc.note?dc.note+' ':'')+'Añade 10 min de equilibrio y movilidad.';cnt++}}});
+    if(cnt<3){docs.REST.note='Descanso. 10 min de ejercicios de equilibrio y movilidad.';cnt=3}
+    why.push('A partir de 65 años la OMS recomienda actividad que trabaje el equilibrio al menos 3 días por semana: está incluida en tus sesiones.')}
+  /* etiquetas */
+  var lab={},letter=0;rtKeys.forEach(function(key){if(!lab[key])lab[key]=key==='CI'?'C':String.fromCharCode(65+letter++)});
+  lab.Z2='Z2';lab.INT='4×4';lab.ACT='+';lab.REST='R';
+  Object.keys(docs).forEach(function(key){docs[key].label=lab[key]});
+  /* minutos de actividad aeróbica a la semana (estimación; 1 min vigoroso = 2 moderados según la OMS) */
+  var mins=0;sched.forEach(function(key){if(key==='Z2')mins+=zm;else if(key==='INT')mins+=16*2+24;else if(key==='ACT')mins+=20;else if(docs[key].extra&&docs[key].kind==='gym')mins+=p==='R'?zm:(lv==='nov'?15:20)});
+  /* explicación */
+  var lvTxt={nov:'2–3',int:'3–4',adv:'4–6'}[lv];
+  if(p!=='R'&&!hasR)why.unshift('Haces '+k+' '+(k===1?'día':'días')+' de pesas: para nivel '+LEVELS[lv].toLowerCase()+' el ACSM propone '+lvTxt+' días por semana.'+(capped?' Como has elegido '+n+' días, el resto son actividad suave para no pasarte de volumen.':''));
+  else if(p!=='R')why.unshift('Combinas objetivos: '+k+' '+(k===1?'día':'días')+' de pesas'+(c?' y '+c+' de cardio':' con cardio al final')+'. Si solo hicieras pesas, el ACSM propone '+lvTxt+' días por semana para nivel '+LEVELS[lv].toLowerCase()+'; aquí se reparten con el cardio'+(rtFocus?', dando prioridad a las pesas':', dando prioridad al cardio')+'.');
+  else why.unshift('Tu objetivo es la resistencia aeróbica. Aun así, la OMS recomienda trabajar la fuerza al menos 2 días por semana, así que '+(k?'hay '+k+' circuitos ligeros de fuerza.':'cada sesión incluye fuerza ligera.'));
+  if(p!=='R')why.push(k<=3?'Rutina de cuerpo completo: así cada músculo se trabaja al menos 2 veces por semana, que da más hipertrofia que 1 vez (Schoenfeld et al. 2016).':'Rutina dividida ('+(k===4?'torso / pierna':k===5&&place==='gym'?'torso, pierna, empuje, tirón y pierna':k===6&&place==='gym'?'empuje, tirón, pierna ×2':'torso / pierna')+') para trabajar cada músculo unas 2 veces por semana (Schoenfeld et al. 2016).');
+  if(p.indexOf('F')>=0||p.indexOf('H')>=0)why.push('Series y repeticiones según el ACSM para nivel '+LEVELS[lv].toLowerCase()+(p.indexOf('F')>=0&&lv!=='nov'?': los ejercicios principales van con cargas altas y pocas repeticiones para fuerza':'')+(p.indexOf('H')>=0?(p.indexOf('F')>=0&&lv!=='nov'?', y el resto en 8–12 repeticiones para hipertrofia':': 8–12 repeticiones para hipertrofia'):'')+'.');
+  if(hasR)why.push('Cardio: unos '+mins+' min a la semana de actividad moderada equivalente (estimación). La OMS recomienda 150–300 min.'+(cardio.indexOf('INT')>=0?' Los intervalos 4×4 mejoraron el VO₂max más que el cardio moderado en el estudio de Helgerud et al. 2007.':'')+(lv==='nov'?' Sin intervalos al principio: mejor progresar poco a poco.':''));
+  else why.push((mins?'Los días de actividad suave suman unos '+mins+' min a la semana (estimación). ':'')+'Para la salud, la OMS recomienda además 150–300 min a la semana de actividad aeróbica moderada; caminar a buen ritmo cuenta.');
+  if(hasR&&rtFocus)why.push('Si tu prioridad es fuerza o hipertrofia, no alargues el cardio: la interferencia con la fuerza crece con la frecuencia y la duración del cardio (Wilson et al. 2012).');
+  if(place==='home'&&p.indexOf('F')>=0)why.push('En casa con mancuernas la carga máxima es limitada; para fuerza máxima, el gimnasio permite progresar más.');
+  why.push('Cargas: usa un peso con el que completes las repeticiones con buena técnica. Cuando hagas 1–2 repeticiones de más en dos sesiones seguidas, sube un 2–10 % (ACSM).');
+  return {id:planId(p,n,place),num:planNumber(planId(p,n,place)),q:q,docs:docs,sched:sched,why:why,mins:mins,k:k}
+}
+var PARQ=['¿Te ha dicho un médico que tienes un problema de corazón o la tensión alta?','¿Sientes dolor en el pecho en reposo, en tu día a día o al hacer actividad física?','¿Pierdes el equilibrio por mareos o has perdido el conocimiento en los últimos 12 meses?','¿Te han diagnosticado otra enfermedad crónica?','¿Tomas medicación con receta para una enfermedad crónica?','¿Tienes (o has tenido en los últimos 12 meses) un problema de huesos, articulaciones o músculos que pueda empeorar con el ejercicio?','¿Te ha dicho un médico que solo hagas actividad física con supervisión médica?'];
+
+/* ---------- vista: crear plan ---------- */
+function qInit(){var m=ME();if(!S.q)S.q={main:'H',sec:'',n:3,place:'gym',lv:'nov',lowImpact:false,age:m.age||'',sex:m.sex||'',weight:latestWeight()||'',height:m.height||'',par:PARQ.map(function(){return null}),preg:null};return S.q}
+function chipRow(act,opts,cur,attrs){return '<div class="chips" style="margin:0 0 8px;flex-wrap:wrap;overflow:visible">'+opts.map(function(o){return '<button class="chip" style="flex:1 1 auto" data-act="'+act+'" data-v="'+o[0]+'" '+(attrs||'')+' aria-pressed="'+(String(cur)===String(o[0]))+'">'+o[1]+(o[2]?'<small>'+o[2]+'</small>':'')+'</button>'}).join('')+'</div>'}
+function qProfile(q){if(q.sec==='ALL')return 'FHR';return q.main+(q.sec&&q.sec!==q.main?q.sec:'')}
+function viewCoach(){
+  var q=qInit(),out='';
+  out+='<div class="card"><h2>Tu plan personalizado</h2><p class="muted small" style="margin:6px 0 0">Responde y la app elige el más adecuado de sus 100 planes y lo adapta a tu experiencia y tu edad. Es una guía orientativa basada en recomendaciones publicadas; no sustituye a un entrenador ni a un médico. <button class="link" data-act="catalog">Ver los 100 planes</button></p></div>';
+  out+='<div class="card"><div class="up" style="margin-bottom:8px">Tus datos</div><div class="grid2" style="margin-bottom:8px">'+
+    '<div><label for="q-age">Edad</label><input type="text" inputmode="numeric" id="q-age" data-f="q" data-k="age" value="'+esc(q.age)+'"></div>'+
+    '<div><label for="q-w">Peso (kg)</label><input type="text" inputmode="decimal" id="q-w" data-f="q" data-k="weight" value="'+esc(q.weight)+'"></div>'+
+    '<div><label for="q-h">Altura (cm)</label><input type="text" inputmode="decimal" id="q-h" data-f="q" data-k="height" value="'+esc(q.height)+'"></div></div>'+
+    '<label>Sexo</label>'+chipRow('qSex',[['h','Hombre'],['m','Mujer']],q.sex)+
+    '<div class="small muted">Las guías usadas (ACSM y OMS) dan las mismas pautas de entrenamiento a hombres y mujeres, así que tu sexo y tu peso no cambian la estructura del plan. Se usan para tus estimaciones (% de grasa, gasto en reposo) y tú ajustas las cargas.</div></div>';
+  out+='<div class="card"><div class="up" style="margin-bottom:8px">Objetivos</div><label>Principal</label>'+chipRow('qMain',[['F','Fuerza','más kilos'],['H','Hipertrofia','más músculo'],['R','Resistencia','cardio, fondo']],q.main)+
+    '<label>Secundario</label>'+chipRow('qSec',[['','Ninguno']].concat(['F','H','R'].filter(function(x){return x!==q.main}).map(function(x){return [x,GOALS[x]]})).concat([['ALL','Los tres por igual']]),q.sec)+'</div>';
+  out+='<div class="card"><div class="up" style="margin-bottom:8px">Disponibilidad</div><label>Días por semana</label>'+chipRow('qN',DAYS_N.map(function(d){return [d,d+' días']}),q.n)+
+    '<label>Dónde entrenas</label>'+chipRow('qPlace',[['gym','Gimnasio'],['home','Casa','mancuernas']],q.place)+
+    '<label>Cardio de bajo impacto (cuidar articulaciones)</label>'+chipRow('qLow',[['0','Me da igual'],['1','Sí, prefiero']],q.lowImpact?'1':'0')+'</div>';
+  out+='<div class="card"><div class="up" style="margin-bottom:8px">Experiencia</div>'+chipRow('qLv',[['nov',LEVELS.nov,LEVEL_DESC.nov],['int',LEVELS.int,LEVEL_DESC.int],['adv',LEVELS.adv,LEVEL_DESC.adv]],q.lv)+'<div class="small muted">Definiciones del ACSM (2009).</div></div>';
+  out+='<div class="card"><div class="up" style="margin-bottom:4px">Tu salud antes de empezar</div><div class="small muted" style="margin-bottom:6px">Preguntas basadas en el cuestionario PAR-Q+. Tus respuestas no se guardan.</div>'+
+    PARQ.map(function(t,i){return '<div class="kv" style="align-items:flex-start"><span style="flex:1">'+t+'</span><span class="row" style="gap:4px;flex:none">'+[['1','Sí'],['0','No']].map(function(o){return '<button class="chip" style="flex:none;min-width:52px" data-act="qPar" data-i="'+i+'" data-v="'+o[0]+'" aria-pressed="'+(q.par[i]===(o[0]==='1'))+'">'+o[1]+'</button>'}).join('')+'</span></div>'}).join('')+
+    (q.sex==='m'?'<div class="kv" style="align-items:flex-start"><span style="flex:1">¿Estás embarazada o has dado a luz en los últimos 6 meses?</span><span class="row" style="gap:4px;flex:none">'+[['1','Sí'],['0','No']].map(function(o){return '<button class="chip" style="flex:none;min-width:52px" data-act="qPreg" data-v="'+o[0]+'" aria-pressed="'+(q.preg===(o[0]==='1'))+'">'+o[1]+'</button>'}).join('')+'</span></div>':'')+'</div>';
+  out+='<button class="btn block" data-act="qGo">Ver mi plan</button>';
+  if(S.qRes)out+='<div id="plan-result" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">'+planResultHtml(S.qRes,true)+'</div>';
+  return out;
+}
+function planResultHtml(r,personal){
+  var q=r.q,out='',warn=[];
+  if(personal){if(q.par&&q.par.some(function(x){return x}))warn.push('Has respondido «sí» a alguna pregunta de salud. Antes de empezar o de aumentar tu actividad, consulta con tu médico (recomendación del PAR-Q+).');
+    if(q.preg)warn.push('En el embarazo y el posparto, consulta con tu médico o matrona antes de seguir un plan; este no está adaptado a esa etapa.')}
+  if(warn.length)out+='<div class="banner" style="border-color:var(--danger)"><b style="color:var(--danger)">Antes de empezar</b>'+warn.map(function(w){return '<p style="margin:4px 0 0">'+esc(w)+'</p>'}).join('')+'</div>';
+  out+='<div class="card"><div class="up">Plan nº '+r.num+' de 100</div><h2 style="margin-top:2px">'+esc(profileName(r.id.split('-')[0]))+'</h2><div class="muted small">'+q.n+' días · '+PLACES[q.place]+' · nivel '+LEVELS[q.lv].toLowerCase()+(q.age?' · '+esc(q.age)+' años':'')+'</div>'+
+    '<div class="list" style="margin-top:8px">'+[1,2,3,4,5,6,0].map(function(d){var key=r.sched[d],dc=r.docs[key];
+      return '<div><div class="grow"><b>'+DOWFULL[d]+'</b> <span class="muted small">'+esc(dc.label)+' · '+esc(dc.name)+(dc.extra&&dc.kind==='gym'?' + cardio':'')+'</span></div></div>'}).join('')+'</div></div>';
+  var seen={};[1,2,3,4,5,6,0].forEach(function(d){var key=r.sched[d];if(seen[key]||key==='REST')return;seen[key]=1;var dc=r.docs[key];
+    out+='<details class="card"'+(Object.keys(seen).length===1?' open':'')+'><summary>'+esc(dc.label)+' · '+esc(dc.name)+'</summary>'+
+      (dc.exercises.length?'<div class="list">'+dc.exercises.map(function(e){return '<div><div class="grow t">'+esc(e.name)+'</div><span class="num" style="font-size:17px;font-weight:600;white-space:nowrap">'+e.sets+' × '+esc(e.reps)+'</span></div>'}).join('')+'</div>':'')+
+      (dc.note?'<p class="small muted">'+esc(dc.note)+'</p>':'')+(dc.extra?'<p class="small"><b>'+esc(dc.extra.name)+':</b> '+esc(dc.extra.target)+(dc.extra.note?' · '+esc(dc.extra.note):'')+'</p>':'')+'</details>'});
+  out+='<div class="card"><div class="up" style="margin-bottom:4px">Por qué este plan</div>'+r.why.map(function(w){return '<div class="sumline">'+esc(w)+'</div>'}).join('')+
+    '<details style="margin-top:6px"><summary>Fuentes</summary><p class="small">ACSM (2009). Progression Models in Resistance Training for Healthy Adults. <i>Med Sci Sports Exerc</i> 41(3):687–708.</p>'+
+    '<p class="small">Schoenfeld BJ, Ogborn D, Krieger JW (2016). Effects of resistance training frequency on measures of muscle hypertrophy. <i>Sports Med</i> 46(11):1689–1697.</p>'+
+    '<p class="small">Organización Mundial de la Salud (2020). Directrices de la OMS sobre actividad física y hábitos sedentarios.</p>'+
+    '<p class="small">Helgerud J et al. (2007). Aerobic high-intensity intervals improve VO₂max more than moderate training. <i>Med Sci Sports Exerc</i> 39(4):665–671.</p>'+
+    '<p class="small">Wilson JM et al. (2012). Concurrent training: a meta-analysis examining interference of aerobic and resistance exercises. <i>J Strength Cond Res</i> 26(8):2293–2307.</p>'+
+    '<p class="small">PAR-Q+ Collaboration. Physical Activity Readiness Questionnaire for Everyone (PAR-Q+).</p></details>'+
+    '<div class="small muted" style="margin-top:6px">Plan orientativo para adultos sanos. Si notas dolor, mareo o falta de aire anormal, para y consulta con un profesional.</div></div>';
+  var applied=(ME().planMeta||{}).id===r.id&&(ME().planMeta||{}).lv===q.lv;
+  out+='<button class="btn block" data-act="qApply">'+(S.armed==='qApply'?'Sustituirá tu plan actual. Toca otra vez para confirmar':(applied?'Volver a aplicar este plan':'Aplicar este plan'))+'</button>';
+  return out;
+}
+function viewCatalog(){
+  var f=S.catF||'F',lv=(S.q&&S.q.lv)||'int',out='';
+  out+='<div class="card"><h2>Los 100 planes</h2><p class="muted small" style="margin:6px 0 0">10 combinaciones de objetivos × 5 frecuencias × gimnasio o casa. Se muestran para nivel <b>'+LEVELS[lv].toLowerCase()+'</b>; al aplicarlos se adaptan a tu experiencia.</p></div>';
+  out+='<div class="chips" style="flex-wrap:wrap;overflow:visible">'+PROFILES.map(function(p){return '<button class="chip" style="flex:1 1 auto" data-act="catF" data-v="'+p+'" aria-pressed="'+(p===f)+'">'+esc(profileName(p))+'</button>'}).join('')+'</div>';
+  out+='<div class="card"><div class="list">'+DAYS_N.map(function(n){return ['gym','home'].map(function(pl){var id=planId(f,n,pl);
+    return '<div><div class="grow"><b>Plan nº '+planNumber(id)+'</b> <span class="muted small">'+n+' días · '+PLACES[pl]+'</span></div><button class="link" data-act="catOpen" data-id="'+id+'">Ver</button></div>'}).join('')}).join('')+'</div></div>';
+  if(S.catRes)out+='<div id="plan-result" style="display:flex;flex-direction:column;gap:12px">'+planResultHtml(S.catRes,false)+'</div>';
+  return out;
+}
+function applyPlan(r){
+  Object.keys(S.plan).forEach(function(id){delete S.plan[id];removeDoc('plan',id)});
+  var ids={},order=0,stamp=Date.now().toString(36);
+  var keys=[];[1,2,3,4,5,6,0].forEach(function(d){var k=r.sched[d];if(keys.indexOf(k)<0)keys.push(k)});
+  keys.forEach(function(k){var dc=r.docs[k],id='p'+stamp+k.toLowerCase();ids[k]=id;
+    var doc={label:dc.label,name:dc.name,kind:dc.kind,order:order++,note:dc.note||'',exercises:dc.exercises.map(function(e){return {id:e.id,name:e.name,sets:e.sets,reps:e.reps,timed:e.timed}}),extra:dc.extra||null};
+    S.plan[id]=doc;saveDoc('plan',id,doc)});
+  var sched=r.sched.map(function(k){return ids[k]||null});
+  saveMe({schedule:sched,planMeta:{id:r.id,lv:r.q.lv,at:today()}});
+}
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-act]');if(!b)return;var a=b.dataset.act,q=S.q,v=b.dataset.v;
+  if(a==='coach'){if(S.tab!=='coach'&&S.tab!=='catalog')S.coachBack=S.tab;S.tab='coach';S.armed=null;qInit();window.scrollTo(0,0);render()}
+  else if(a==='catalog'){S.tab='catalog';S.armed=null;window.scrollTo(0,0);render()}
+  else if(a==='qSex'){q.sex=q.sex===v?'':v;render()}
+  else if(a==='qMain'){q.main=v;if(q.sec===v)q.sec='';S.qRes=null;render()}
+  else if(a==='qSec'){q.sec=v;S.qRes=null;render()}
+  else if(a==='qN'){q.n=Number(v);S.qRes=null;render()}
+  else if(a==='qPlace'){q.place=v;S.qRes=null;render()}
+  else if(a==='qLow'){q.lowImpact=v==='1';S.qRes=null;render()}
+  else if(a==='qLv'){q.lv=v;S.qRes=null;render()}
+  else if(a==='qPar'){q.par[Number(b.dataset.i)]=v==='1';render()}
+  else if(a==='qPreg'){q.preg=v==='1';render()}
+  else if(a==='qGo'){var age=num(q.age);
+    if(age==null){toast('Pon tu edad');return}if(age<18){toast('Esta app es para mayores de 18 años. Para menores, consulta con un entrenador o un profesional sanitario.');return}if(age>110){toast('Revisa la edad');return}
+    if(q.par.some(function(x){return x===null})||(q.sex==='m'&&q.preg===null)){toast('Responde las preguntas de salud');return}
+    var patch={age:Math.round(age)};if(q.sex)patch.sex=q.sex;var h=num(q.height);if(h>0)patch.height=h;saveMe(patch);
+    var w=num(q.weight);if(w>0&&!(S.body[today()]&&S.body[today()].weight!=null)){var cur=Object.assign({date:today()},S.body[today()]||{},{weight:w,src:'manual'});S.body[today()]=cur;saveDoc('body',today(),cur)}
+    S.qRes=buildPlan({p:qProfile(q),n:q.n,place:q.place,lv:q.lv,age:Math.round(age),lowImpact:q.lowImpact,par:q.par.slice(),preg:q.preg,sex:q.sex});
+    render();setTimeout(function(){var el=document.getElementById('plan-result');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},50)}
+  else if(a==='catF'){S.catF=v;S.catRes=null;render()}
+  else if(a==='catOpen'){var pr=b.dataset.id.split('-'),qq=S.q||{};S.catRes=buildPlan({p:pr[0],n:Number(pr[1]),place:pr[2],lv:qq.lv||'int',age:num(qq.age)||ME().age||null,lowImpact:!!qq.lowImpact});render();setTimeout(function(){var el=document.getElementById('plan-result');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},50)}
+  else if(a==='qApply'){var r=S.tab==='catalog'?S.catRes:S.qRes;if(!r)return;
+    if(Object.keys(S.plan).length&&S.armed!=='qApply'){S.armed='qApply';schedule();return}S.armed=null;
+    applyPlan(r);S.tab='train';S.date=today();window.scrollTo(0,0);toast('Plan nº '+r.num+' aplicado');render()}
+});
+document.addEventListener('input',function(ev){var t=ev.target;if(t.dataset&&t.dataset.f==='q'){qInit()[t.dataset.k]=t.value}});
+
 /* ---------- acceso ---------- */
 function viewLogin(){
   return '<div class="top"><div class="date"><h1 style="text-transform:none">Diario de Entreno</h1></div></div><main>'+
@@ -689,7 +923,7 @@ function render(){
   if(S.auth==='out'){document.getElementById('app').innerHTML=viewLogin();nav.hidden=true;if(typeof restPaint==='function')restPaint();return}
   if(S.auth==='wait'||!ST.mem){document.getElementById('app').innerHTML='<div class="card empty" style="margin-top:24px">Cargando…</div>';nav.hidden=true;return}
   nav.hidden=false;
-  var body=S.tab==='train'?viewTrain():S.tab==='food'?viewFood():S.tab==='body'?viewBody():S.tab==='progress'?viewProgress():S.tab==='settings'?viewSettings():S.tab==='plan'?viewPlan():viewWatch();
+  var body=S.tab==='train'?viewTrain():S.tab==='food'?viewFood():S.tab==='body'?viewBody():S.tab==='progress'?viewProgress():S.tab==='settings'?viewSettings():S.tab==='plan'?viewPlan():S.tab==='coach'?viewCoach():S.tab==='catalog'?viewCatalog():viewWatch();
   document.getElementById('app').innerHTML=header()+'<main>'+syncBanner()+lockBanner()+body+'</main>';
   applyLock();
   document.getElementById('tabs').innerHTML=[['train','Entreno'],['food','Comida'],['body','Cuerpo'],['watch','Watch'],['progress','Progreso']].map(function(t){return '<button data-act="tab" data-tab="'+t[0]+'"'+(S.tab===t[0]?' aria-current="true"':'')+'>'+t[1]+'</button>'}).join('');
@@ -768,7 +1002,7 @@ document.addEventListener('click',function(ev){
   var b=ev.target.closest('[data-act]');if(!b)return;var act=b.dataset.act,m=ME(),id=b.dataset.id,p,i;
   if(act==='settings'){if(S.tab!=='settings'&&S.tab!=='plan')S.back=S.tab;S.tab='settings';S.armed=null;window.scrollTo(0,0);render()}
   else if(act==='openPlan'){if(S.tab==='settings')S.planBack='settings';else if(S.tab!=='plan'){S.planBack=S.tab;S.back=S.tab}S.tab='plan';window.scrollTo(0,0);render()}
-  else if(act==='back'){S.tab=S.tab==='plan'?(S.planBack||'train'):(S.back||'train');S.armed=null;window.scrollTo(0,0);render()}
+  else if(act==='back'){S.tab=S.tab==='catalog'?'coach':S.tab==='coach'?(S.coachBack||'train'):S.tab==='plan'?(S.planBack||'train'):(S.back||'train');S.armed=null;window.scrollTo(0,0);render()}
   else if(act==='sex'){saveMe({sex:m.sex===b.dataset.v?null:b.dataset.v})}
   else if(act==='toggle'){var o={};o[b.dataset.k]=!m[b.dataset.k];saveMe(o)}
   else if(act==='addGym'){var g=S.draft.gymNew.trim();if(!g){toast('Escribe el nombre');return}var gs=(m.gyms||[]).slice();if(gs.indexOf(g)<0)gs.push(g);S.draft.gymNew='';saveMe({gyms:gs})}
@@ -873,8 +1107,9 @@ document.addEventListener('change',function(ev){
 var REST={'bench':150,'row-heavy':150,'pullup':150,'leg-press':150,'rdl':150,'squat':150,'hip-thrust':120,'incline-db':120,'mb-slam':90,'box-jump':120,'hop-squat':90,'cable-row':90,
  'lat-raise':60,'biceps-curl':60,'hammer-curl':60,'triceps-push':60,'tri-overhead':60,'face-pull':60,'cable-fly':75,'leg-curl':60,'cable-kickback':60,'calf':60,'calf-seated':60,'wrist-flex':45,'wrist-ext':45,'hip-abd':60,'sl-bridge':60,
  'plank':45,'hollow':45,'side-plank':45,'dead-bug':45,'rev-crunch':45,'cable-rotation':45,'pallof':45,
- 'chin-tuck':30,'band-row':30,'band-er':30,'wall-slide':30,'neck-iso':30,'tib-raise':30};
-var RGRP={'bench':'compuesto pesado','row-heavy':'compuesto pesado','pullup':'compuesto pesado','leg-press':'compuesto pesado','rdl':'compuesto pesado','squat':'compuesto pesado'};
+ 'chin-tuck':30,'band-row':30,'band-er':30,'wall-slide':30,'neck-iso':30,'tib-raise':30,
+ 'ohp':120,'deadlift':180,'goblet':120,'db-press':120,'db-row':90,'db-ohp':90,'pushup':90,'lunge':90};
+var RGRP={'deadlift':'compuesto pesado','goblet':'compuesto','db-press':'compuesto','db-row':'compuesto','db-ohp':'compuesto','pushup':'compuesto','lunge':'compuesto','ohp':'compuesto','bench':'compuesto pesado','row-heavy':'compuesto pesado','pullup':'compuesto pesado','leg-press':'compuesto pesado','rdl':'compuesto pesado','squat':'compuesto pesado'};
 function restSourcesLink(){return '<details style="display:inline"><summary class="small" style="min-height:32px;display:inline-flex;font-weight:600">¿De dónde salen las pausas?</summary><p class="small">Son una guía orientativa por tipo de ejercicio, no una prescripción. Se basan en: Schoenfeld BJ et al., <i>J Strength Cond Res</i> 2016 (3 min de pausa dieron más fuerza e hipertrofia que 1 min, 21 participantes); y Singer A et al., <i>Front Sports Act Living</i> 2024 (más de 60 s algo mejor que menos de 60 s para hipertrofia, evidencia débil; sin diferencia clara por encima de 90 s). La duración de la serie se estima con 3 s por repetición.</p></details>'}
 function restFor(ex){
   var id=ex.id,nm=(ex.name||'').toLowerCase(),s=REST[id],g=RGRP[id];
