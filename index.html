@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Diario de Entreno</title>
-<meta name="description" content="Diario de entreno, comida, cuerpo y sueño. Cada persona entra con Google y sus datos se guardan en su propio Drive.">
+<title>Traintrack</title>
+<meta name="apple-mobile-web-app-title" content="Traintrack">
+<meta name="application-name" content="Traintrack">
+<meta name="description" content="Traintrack: diario de entreno, comida, cuerpo y sueño. Cada persona entra con Google y sus datos se guardan en su propio Drive.">
 <meta name="theme-color" content="#EEF3F1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#070D12" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -242,7 +244,7 @@ function L(es,en){return LANG==='en'?en:es}
 var LOC=LANG==='en'?'en-US':'es-ES';
 var MES=L(['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']), DOW=L(['dom','lun','mar','mié','jue','vie','sáb'],['Sun','Mon','Tue','Wed','Thu','Fri','Sat']);
 var DOWFULL=L(['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']);
-document.documentElement.lang=LANG;document.title=L('Diario de Entreno','Training Log');
+document.documentElement.lang=LANG;document.title='Traintrack';
 /* ---------- traducción de la interfaz (inglés) ----------
    La interfaz se escribe en español; en inglés se traduce cada texto al pintarlo.
    Fechas y números se sustituyen por marcas (§ y #) para que una misma frase sirva con cualquier valor. */
@@ -1225,7 +1227,7 @@ document.addEventListener('input',function(ev){var t=ev.target;if(t.dataset&&t.d
 /* ---------- acceso ---------- */
 function langRow(){return '<div class="chips" style="margin:8px 0 0">'+[['es','Español'],['en','English']].map(function(o){return '<button class="chip" data-act="lang" data-v="'+o[0]+'" lang="'+o[0]+'" aria-pressed="'+(LANG===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'}
 function viewLogin(){
-  return '<div class="top"><div class="date"><h1 style="text-transform:none">'+L('Diario de Entreno','Training Log')+'</h1></div></div><main>'+
+  return '<div class="top"><div class="date"><h1 style="text-transform:none">'+'Traintrack'+'</h1></div></div><main>'+
     '<div class="card"><h2>Tu entreno, comida, cuerpo y sueño</h2><p class="muted" style="margin:6px 0 12px">Cada persona entra con su cuenta de Google. Tus datos se guardan en tu propio Google Drive, en una carpeta privada de esta app que no ve nadie más.</p>'+
     '<button class="btn block" data-act="google"'+(G.client?'':' disabled')+'>Continuar con Google</button>'+
     (S.authMsg?'<p class="small" style="color:var(--danger);margin:8px 0 0">'+esc(S.authMsg)+'</p>':'')+
@@ -1335,7 +1337,7 @@ document.addEventListener('click',function(ev){
   else if(act==='addGym'){var g=S.draft.gymNew.trim();if(!g){toast('Escribe el nombre');return}var gs=(m.gyms||[]).slice();if(gs.indexOf(g)<0)gs.push(g);S.draft.gymNew='';saveMe({gyms:gs})}
   else if(act==='delGym'){arm('delGym'+b.dataset.key,function(){var gs=(ME().gyms||[]).slice();gs.splice(Number(b.dataset.key),1);saveMe({gyms:gs})})}
   else if(act==='theme'){stSet('de_theme',b.dataset.v);applyTheme();render()}
-  else if(act==='export'){var blob=new Blob([JSON.stringify({exportado:nowIso(),datos:ST.mem.cols},null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='diario-de-entreno-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}
+  else if(act==='export'){var blob=new Blob([JSON.stringify({exportado:nowIso(),datos:ST.mem.cols},null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='traintrack-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}
   else if(act==='ndKind'){S.newDay.kind=b.dataset.k;render()}
   else if(act==='plAdd'){var nd=S.newDay;if(!nd.name.trim()&&!nd.label.trim()){toast('Pon una letra o un nombre');return}
     var nid='d'+uid().replace(/-/g,'').slice(0,8),mx=planDays().reduce(function(a,q){return Math.max(a,q.order||0)},0);
